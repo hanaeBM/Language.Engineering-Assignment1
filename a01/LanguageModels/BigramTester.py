@@ -90,21 +90,26 @@ class BigramTester(object):
 
     def compute_entropy_cumulatively(self, word):
         idx_curr=self.index.get(word)
-        idx_last=self.last_index
-        N=self.total_words
-
-        if idx_last in self.bigram_prob[idx_curr]:
-            P= self.lambda1*math.exp(self.bigram_prob[idx_last][idx_curr])
+        if idx_curr==None:
+            P=self.lambda3
+            self.last_index=-1
         else:
-            P=0
-        P+= self.lambda2*self.unigram_count[idx_curr]/N +self.lambda3
+            idx_last=self.last_index
+            N=self.total_words
+
+            if idx_last!=-1 and idx_curr in self.bigram_prob[idx_last]:
+                P= self.lambda1*math.exp(self.bigram_prob[idx_last][idx_curr])
+            else:
+                P=0
+            P+= self.lambda2*self.unigram_count[idx_curr]/N +self.lambda3
+            self.last_index= idx_curr
 
         self.logProb+=-math.log(P)
         
         self.test_words_processed+=1
-        self.last_index= idx_curr
+        
 
-        pass
+    
 
     def process_test_file(self, test_filename):
         """
@@ -120,7 +125,8 @@ class BigramTester(object):
                     self.compute_entropy_cumulatively(token)
                 self.logProb = self.logProb / self.test_words_processed
             return True
-        except IOError:
+        except IOError as e:
+            print(e)
             print('Error reading testfile')
             return False
 
