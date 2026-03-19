@@ -63,7 +63,27 @@ class Generator(object) :
         try:
             with codecs.open(filename, 'r', 'utf-8') as f:
                 self.unique_words, self.total_words = map(int, f.readline().strip().split(' '))
-                # YOUR CODE HERE
+                # unigram
+                for i in range(self.unique_words):
+                    idx,token,count=f.readline().strip().split(' ')
+                    idx=int(idx)
+                    count=int(count)
+                    self.index[token]=idx
+                    self.word[idx]=token
+                    self.unigram_count[idx]=count
+                # bigram
+                for line in f:
+                    if line.strip()=="-1":
+                        break
+                    idx1,idx2,logp=line.strip().split(' ')
+                    idx1=int(idx1)
+                    idx2=int(idx2)
+                    logp=float(logp)
+                    self.bigram_prob[idx1][idx2]=logp
+                    self.logProb+=logp
+                self.logProb=self.logProb/len(self.bigram_prob)
+
+                
                 return True
         except IOError:
             print("Couldn't find bigram probabilities file {}".format(filename))
@@ -74,8 +94,30 @@ class Generator(object) :
         Generates and prints n words, starting with the word w, and sampling from the distribution
         of the language model.
         """ 
-        # YOUR CODE HERE
-        pass
+
+        curr_idx=self.index[w]
+        G=[f"{w}"]
+        for i in range(n):
+            if curr_idx in self.bigram_prob:
+                I=list(self.bigram_prob[curr_idx].keys())
+                LogP=list(self.bigram_prob[curr_idx].values())
+                P= [math.exp(lp) for lp in LogP]
+                next_idx=random.choices(I,weights=P,k=1)[0]
+                
+            else:
+                I=list(self.word.keys())
+                next_idx=random.choice(I)
+
+            G.append(f" {self.word[next_idx]}")
+            curr_idx=next_idx
+        print(G)
+        return G
+
+            
+        
+
+
+        
 
 
 def main():

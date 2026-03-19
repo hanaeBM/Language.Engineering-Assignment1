@@ -64,7 +64,24 @@ class BigramTester(object):
         try:
             with codecs.open(filename, 'r', 'utf-8') as f:
                 self.unique_words, self.total_words = map(int, f.readline().strip().split(' '))
-                # YOUR CODE HERE
+                # unigram
+                for i in range(self.unique_words):
+                    idx,token,count=f.readline().strip().split(' ')
+                    idx=int(idx)
+                    count=int(count)
+                    self.index[token]=idx
+                    self.word[idx]=token
+                    self.unigram_count[idx]=count
+                # bigram
+                for line in f:
+                    if line.strip()=="-1":
+                        break
+                    idx1,idx2,logp=line.strip().split(' ')
+                    idx1=int(idx1)
+                    idx2=int(idx2)
+                    logp=float(logp)
+                    self.bigram_prob[idx1][idx2]=logp
+                    
                 return True
         except IOError:
             print("Couldn't find bigram probabilities file {}".format(filename))
@@ -72,7 +89,21 @@ class BigramTester(object):
 
 
     def compute_entropy_cumulatively(self, word):
-        # YOUR CODE HERE
+        idx_curr=self.index.get(word)
+        idx_last=self.last_index
+        N=self.total_words
+
+        if idx_last in self.bigram_prob[idx_curr]:
+            P= self.lambda1*math.exp(self.bigram_prob[idx_last][idx_curr])
+        else:
+            P=0
+        P+= self.lambda2*self.unigram_count[idx_curr]/N +self.lambda3
+
+        self.logProb+=-math.log(P)
+        
+        self.test_words_processed+=1
+        self.last_index= idx_curr
+
         pass
 
     def process_test_file(self, test_filename):
@@ -87,6 +118,7 @@ class BigramTester(object):
                 self.tokens = nltk.word_tokenize(f.read().lower()) 
                 for token in self.tokens:
                     self.compute_entropy_cumulatively(token)
+                self.logProb = self.logProb / self.test_words_processed
             return True
         except IOError:
             print('Error reading testfile')
